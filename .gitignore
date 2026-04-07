@@ -1,0 +1,5 @@
+/.idea
+/target
+/vendor
+/.phpunit.result.cache
+/composer.lock

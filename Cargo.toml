@@ -1,0 +1,21 @@
+[package]
+name = "php-ext-pqcrypto"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "PHP extension for post-quantum cryptography (ML-KEM, X-Wing, ML-DSA, SLH-DSA)"
+license = "MIT"
+repository = "https://github.com/paragonie/ext-pqcrypto"
+authors = ["Paragon Initiative Enterprises"]
+
+[lib]
+name = "pqcrypto"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+ext-php-rs = "0.15"
+ml-kem = "=0.3.0-rc.2"
+ml-dsa = "=0.1.0-rc.8"
+slh-dsa = "=0.2.0-rc.4"
+x-wing = { version = "=0.1.0-rc.0", features = ["getrandom", "zeroize"] }
+rand = "0.10"

@@ -1,0 +1,24 @@
+{
+    "name": "paragonie/ext-pqcrypto",
+    "description": "PHP extension for post-quantum cryptography (ML-KEM, X-Wing, ML-DSA, SLH-DSA)",
+    "type": "php-ext",
+    "license": "ISC",
+    "keywords": ["post-quantum", "cryptography", "ml-kem", "ml-dsa", "slh-dsa", "x-wing", "pqc"],
+    "homepage": "https://github.com/paragonie/ext-pqcrypto",
+    "require": {
+        "php": ">=8.1"
+    },
+    "php-ext": {
+        "extension-name": "pqcrypto",
+        "support-zts": true,
+        "support-nts": true,
+        "build-path": "pie",
+        "download-url-method": ["pre-packaged-binary", "composer-default"]
+    },
+    "suggest": {
+        "ext-pqcrypto": "This package provides the native extension. Install via 'make install'."
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11|^12|^13"
+    }
+}
