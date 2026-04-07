@@ -1,6 +1,10 @@
 # ext-pqcrypto: Post-Quantum Cryptography for PHP
 
 [![CI](https://github.com/paragonie/ext-pqcrypto/actions/workflows/ci.yml/badge.svg)](https://github.com/paragonie/ext-pqcrypto/actions/workflows/ci.yml)
+[![Latest Stable Version](https://poser.pugx.org/paragonie/ext-pqcrypto/v/stable)](https://packagist.org/packages/paragonie/ext-pqcrypto)
+[![License](https://poser.pugx.org/paragonie/ext-pqcrypto/license)](https://packagist.org/packages/paragonie/ext-pqcrypto)
+[![Downloads](https://img.shields.io/packagist/dt/paragonie/ext-pqcrypto.svg)](https://packagist.org/packages/paragonie/ext-pqcrypto)
+[![crates.io](https://img.shields.io/crates/v/php-ext-pqcrypto.svg?logo=rust)](https://crates.io/crates/php-ext-pqcrypto)
 
 A PHP extension (written in Rust) that exposes post-quantum cryptography algorithms from the 
 [RustCrypto](https://github.com/RustCrypto) project.
