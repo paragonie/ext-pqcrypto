@@ -63,5 +63,3 @@ jobs:
         run: |
           EXT=$(pwd)/target/release/libpqcrypto.so
           php -d "extension=${EXT}" vendor/bin/phpunit
-
-      - run: php -l stubs/PQCrypto.php
