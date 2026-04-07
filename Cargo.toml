@@ -2,7 +2,7 @@
 name = "php-ext-pqcrypto"
 version = "0.1.0"
 edition = "2021"
-publish = false
+publish = true
 description = "PHP extension for post-quantum cryptography (ML-KEM, X-Wing, ML-DSA, SLH-DSA)"
 license = "MIT"
 repository = "https://github.com/paragonie/ext-pqcrypto"
