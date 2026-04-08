@@ -1,6 +1,6 @@
 [package]
 name = "php-ext-pqcrypto"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 publish = true
 description = "PHP extension for post-quantum cryptography (ML-KEM, X-Wing, ML-DSA, SLH-DSA)"
