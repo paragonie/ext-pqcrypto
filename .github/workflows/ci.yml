@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -40,7 +40,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest]
         php-version: ['8.1', '8.2', '8.3', '8.4', '8.5']
+    name: PHP ${{ matrix.php-version }} on ${{ matrix.os }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -49,6 +51,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
         with:
           toolchain: stable
+          components: rustfmt
 
       - uses: shivammathur/setup-php@fcafdd6392932010c2bd5094439b8e33be2a8a09 # v2.37.0
         with:
@@ -59,7 +62,18 @@ jobs:
 
       - run: cargo build --release
 
-      - name: Run PHPUnit
+      - name: Run PHPUnit (Linux)
+        if: runner.os == 'Linux'
         run: |
           EXT=$(pwd)/target/release/libpqcrypto.so
           php -d "extension=${EXT}" vendor/bin/phpunit
+
+      - name: Run PHPUnit (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          EXT_DIR="$(php -r "echo ini_get('extension_dir');")"
+          cp target/release/pqcrytpto.dll "${EXT_DIR}/pqcryto.dll"
+          echo "extension=pqcrypto" >> "$(php -r echo php_ini_loaded_file();")"
+          php  -m | grep pqcrypto
+          php vendor/bin/phpunit
