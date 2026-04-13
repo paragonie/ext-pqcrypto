@@ -6,6 +6,7 @@ use ext_php_rs::types::ZendHashTable;
 
 trait KemOps {
     fn generate() -> (Vec<u8>, Vec<u8>);
+    fn keypair_from_seed(seed: &[u8]) -> Result<(Vec<u8>, Vec<u8>), String>;
     fn encapsulate(ek_bytes: &[u8]) -> Result<(Vec<u8>, Vec<u8>), String>;
     fn decapsulate(seed: &[u8], ct: &[u8]) -> Result<Vec<u8>, String>;
     fn seed_len() -> usize;
@@ -112,6 +113,24 @@ macro_rules! define_kem_variant {
                 })?;
                 Ok(ht)
             }
+
+            pub fn keypairFromSeed(
+                seed: Binary<u8>,
+            ) -> PhpResult<ZBox<ZendHashTable>> {
+                let (sk, ek_bytes) =
+                    <$ops>::keypair_from_seed(&seed)
+                        .map_err(|e| PhpException::default(e))?;
+                let dk = $dk { seed: sk };
+                let ek = $ek { bytes: ek_bytes };
+                let mut ht = ZendHashTable::new();
+                ht.push(dk).map_err(|e| {
+                    PhpException::default(e.to_string())
+                })?;
+                ht.push(ek).map_err(|e| {
+                    PhpException::default(e.to_string())
+                })?;
+                Ok(ht)
+            }
         }
     };
 }
@@ -139,6 +158,24 @@ mod mlkem_ops {
                     let ek_bytes = ek.to_bytes();
                     let ek_slice: &[u8] = &ek_bytes;
                     (seed.to_vec(), ek_slice.to_vec())
+                }
+
+                fn keypair_from_seed(
+                    seed: &[u8],
+                ) -> Result<(Vec<u8>, Vec<u8>), String> {
+                    let seed_key: &ml_kem::array::Array<u8, _> =
+                        seed.try_into().map_err(|_| {
+                            format!(
+                                "Invalid seed length: expected {}, got {}",
+                                $seed_len,
+                                seed.len()
+                            )
+                        })?;
+                    let dk = <$dk_ty>::new(seed_key);
+                    let ek = dk.encapsulation_key();
+                    let ek_bytes = ek.to_bytes();
+                    let ek_s: &[u8] = &ek_bytes;
+                    Ok((seed.to_vec(), ek_s.to_vec()))
                 }
 
                 fn encapsulate(
@@ -214,7 +251,7 @@ mod mlkem_ops {
 
 mod xwing_ops {
     use super::KemOps;
-    use x_wing::kem::{Decapsulate, Encapsulate, KeyExport, Kem};
+    use x_wing::kem::{Decapsulate, Decapsulator, Encapsulate, KeyExport, Kem};
     use x_wing::{DecapsulationKey, EncapsulationKey, XWingKem};
 
     pub struct XWingOps;
@@ -228,6 +265,24 @@ mod xwing_ops {
             let pk_bytes = pk.to_bytes();
             let pk_s: &[u8] = &pk_bytes;
             (sk_bytes, pk_s.to_vec())
+        }
+
+        fn keypair_from_seed(
+            seed: &[u8],
+        ) -> Result<(Vec<u8>, Vec<u8>), String> {
+            let sk_arr: [u8; 32] = seed
+                .try_into()
+                .map_err(|_| {
+                    format!(
+                        "Invalid seed length: expected 32, got {}",
+                        seed.len()
+                    )
+                })?;
+            let dk = DecapsulationKey::from(sk_arr);
+            let ek = dk.encapsulation_key();
+            let ek_bytes = ek.to_bytes();
+            let ek_s: &[u8] = &ek_bytes;
+            Ok((seed.to_vec(), ek_s.to_vec()))
         }
 
         fn encapsulate(
@@ -327,6 +382,15 @@ mod tests {
 
         assert!(T::decapsulate(b"short", &ct).is_err());
         assert!(T::decapsulate(&seed, b"bad").is_err());
+
+        let (seed2, ek2) = T::keypair_from_seed(&seed).unwrap();
+        assert_eq!(seed, seed2);
+        assert_eq!(ek, ek2);
+
+        let (ss2, ct2) = T::encapsulate(&ek2).unwrap();
+        let rss2 = T::decapsulate(&seed2, &ct2).unwrap();
+        assert_eq!(ss2, rss2);
+        assert!(T::keypair_from_seed(b"short").is_err());
     }
 
     #[test]

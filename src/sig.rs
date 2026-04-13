@@ -6,6 +6,7 @@ use ext_php_rs::types::ZendHashTable;
 
 trait SigOps {
     fn generate() -> (Vec<u8>, Vec<u8>);
+    fn keypair_from_seed(seed: &[u8]) -> Result<(Vec<u8>, Vec<u8>), String>;
     fn sign(seed: &[u8], msg: &[u8]) -> Result<Vec<u8>, String>;
     fn verify(
         vk: &[u8],
@@ -117,6 +118,24 @@ macro_rules! define_sig_variant {
                 })?;
                 Ok(ht)
             }
+
+            pub fn keypairFromSeed(
+                seed: Binary<u8>,
+            ) -> PhpResult<ZBox<ZendHashTable>> {
+                let (sk_seed, vk_bytes) =
+                    <$ops>::keypair_from_seed(&seed)
+                        .map_err(|e| PhpException::default(e))?;
+                let sk = $sk { seed: sk_seed };
+                let vk = $vk { bytes: vk_bytes };
+                let mut ht = ZendHashTable::new();
+                ht.push(sk).map_err(|e| {
+                    PhpException::default(e.to_string())
+                })?;
+                ht.push(vk).map_err(|e| {
+                    PhpException::default(e.to_string())
+                })?;
+                Ok(ht)
+            }
         }
     };
 }
@@ -139,6 +158,24 @@ mod mldsa_ops {
                     let vk_enc = kp.verifying_key().encode();
                     let vk_s: &[u8] = &vk_enc;
                     (seed, vk_s.to_vec())
+                }
+
+                fn keypair_from_seed(
+                    seed: &[u8],
+                ) -> Result<(Vec<u8>, Vec<u8>), String> {
+                    use ml_dsa::KeyGen;
+                    use ml_dsa::signature::Keypair;
+                    let seed_ref: &ml_dsa::Seed =
+                        seed.try_into().map_err(|_| {
+                            format!(
+                                "Invalid seed length: expected 32, got {}",
+                                seed.len()
+                            )
+                        })?;
+                    let kp = <$param>::from_seed(seed_ref);
+                    let vk_enc = kp.verifying_key().encode();
+                    let vk_s: &[u8] = &vk_enc;
+                    Ok((seed.to_vec(), vk_s.to_vec()))
                 }
 
                 fn sign(
@@ -527,6 +564,14 @@ mod tests {
         assert!(T::verify(&vk, &sig, b"test msg").unwrap());
         assert!(!T::verify(&vk, &sig, b"wrong").unwrap());
         assert!(T::sign(b"short", b"msg").is_err());
+
+        let (seed2, vk2) = T::keypair_from_seed(&seed).unwrap();
+        assert_eq!(seed, seed2);
+        assert_eq!(vk, vk2);
+
+        let sig2 = T::sign(&seed2, b"seed kp test").unwrap();
+        assert!(T::verify(&vk2, &sig2, b"seed kp test").unwrap());
+        assert!(T::keypair_from_seed(b"short").is_err());
     }
 
     #[test]
