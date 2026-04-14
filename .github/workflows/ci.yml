@@ -73,7 +73,7 @@ jobs:
         shell: bash
         run: |
           EXT_DIR="$(php -r "echo ini_get('extension_dir');")"
-          cp target/release/pqcrytpto.dll "${EXT_DIR}/pqcryto.dll"
-          echo "extension=pqcrypto" >> "$(php -r echo php_ini_loaded_file();")"
-          php  -m | grep pqcrypto
+          cp target/release/pqcrytpto.dll "${EXT_DIR}/pqcrypto.dll"
+          echo "extension=pqcrypto" >> "$(php -r "echo php_ini_loaded_file();")"
+          php -m | grep pqcrypto
           php vendor/bin/phpunit
