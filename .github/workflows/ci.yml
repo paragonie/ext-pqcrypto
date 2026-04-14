@@ -62,6 +62,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
+          rustup component add rustfmt
           $rustfmt = & rustup which rustfmt
           echo "RUSTFMT=$rustfmt" >> $env:GITHUB_ENV
 
