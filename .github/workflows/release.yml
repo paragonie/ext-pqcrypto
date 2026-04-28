@@ -41,6 +41,14 @@ jobs:
         env:
           phpts: ${{ matrix.phpts }}
 
+      - name: Set rustfmt for bindgen (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          rustup component add rustfmt
+          $rustfmt = & rustup which rustfmt
+          echo "RUSTFMT=$rustfmt" >> $env:GITHUB_ENV
+
       - name: Build extension
         run: cargo build --release
 
