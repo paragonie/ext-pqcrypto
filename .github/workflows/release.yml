@@ -1,0 +1,196 @@
+name: Release Binaries
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-binaries-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  EXTENSION_NAME: pqcrypto
+
+jobs:
+  build-linux:
+    name: Linux x86_64 PHP ${{ matrix.php-version }} ${{ matrix.phpts }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ["8.1", "8.2", "8.3", "8.4", "8.5"]
+        phpts: [nts, ts]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        with:
+          toolchain: stable
+
+      - uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2.37.0
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+        env:
+          phpts: ${{ matrix.phpts }}
+
+      - name: Build extension
+        run: cargo build --release
+
+      - name: Verify extension loads
+        run: |
+          extension_path="${GITHUB_WORKSPACE}/target/release/lib${EXTENSION_NAME}.so"
+          php -d "extension=${extension_path}" -m | grep "${EXTENSION_NAME}"
+
+      - name: Package PIE binary
+        env:
+          PHP_VERSION: ${{ matrix.php-version }}
+          PHP_TS: ${{ matrix.phpts }}
+          VERSION: ${{ github.ref_name }}
+        run: |
+          if [ "${PHP_TS}" = "ts" ]; then
+            ts_mode="zts"
+          else
+            ts_mode="nts"
+          fi
+
+          archive_name="php_${EXTENSION_NAME}-${VERSION}_php${PHP_VERSION}-x86_64-linux-glibc-${ts_mode}.zip"
+          mkdir -p dist
+          cp "target/release/lib${EXTENSION_NAME}.so" "dist/${EXTENSION_NAME}.so"
+          (
+            cd dist
+            zip -q "${archive_name}" "${EXTENSION_NAME}.so"
+          )
+          rm "dist/${EXTENSION_NAME}.so"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pie-linux-x86_64-glibc-php${{ matrix.php-version }}-${{ matrix.phpts }}
+          path: dist/*.zip
+          if-no-files-found: error
+
+  build-windows:
+    name: Windows x86_64 PHP ${{ matrix.php-version }} ${{ matrix.phpts }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ["8.1", "8.2", "8.3", "8.4", "8.5"]
+        phpts: [nts, ts]
+        include:
+          - php-version: "8.1"
+            compiler: vs16
+          - php-version: "8.2"
+            compiler: vs16
+          - php-version: "8.3"
+            compiler: vs16
+          - php-version: "8.4"
+            compiler: vs17
+          - php-version: "8.5"
+            compiler: vs17
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        with:
+          toolchain: stable
+          components: rustfmt
+          targets: x86_64-pc-windows-msvc
+
+      - uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2.37.0
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+        env:
+          phpts: ${{ matrix.phpts }}
+
+      - name: Set rustfmt for bindgen
+        shell: pwsh
+        run: |
+          $rustfmt = & rustup which rustfmt
+          "RUSTFMT=$rustfmt" >> $env:GITHUB_ENV
+
+      - name: Build extension
+        run: cargo build --release --target x86_64-pc-windows-msvc
+
+      - name: Verify extension loads
+        shell: pwsh
+        run: |
+          $extensionDir = php -r "echo ini_get('extension_dir');"
+          Copy-Item "target/x86_64-pc-windows-msvc/release/${env:EXTENSION_NAME}.dll" "${extensionDir}/${env:EXTENSION_NAME}.dll"
+          "extension=${env:EXTENSION_NAME}" >> (php -r "echo php_ini_loaded_file();")
+          php -m | Select-String -SimpleMatch "${env:EXTENSION_NAME}"
+
+      - name: Package PIE binary
+        shell: pwsh
+        env:
+          COMPILER: ${{ matrix.compiler }}
+          PHP_VERSION: ${{ matrix.php-version }}
+          PHP_TS: ${{ matrix.phpts }}
+          VERSION: ${{ github.ref_name }}
+        run: |
+          $baseName = "php_${env:EXTENSION_NAME}-${env:VERSION}-${env:PHP_VERSION}-${env:PHP_TS}-${env:COMPILER}-x86_64"
+          New-Item -ItemType Directory -Force -Path dist
+          Copy-Item "target/x86_64-pc-windows-msvc/release/${env:EXTENSION_NAME}.dll" "dist/${baseName}.dll"
+          Push-Location dist
+          Compress-Archive -Path "${baseName}.dll" -DestinationPath "${baseName}.zip" -Force
+          Remove-Item "${baseName}.dll"
+          Pop-Location
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pie-windows-x86_64-php${{ matrix.php-version }}-${{ matrix.phpts }}
+          path: dist/*.zip
+          if-no-files-found: error
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs:
+      - build-linux
+      - build-windows
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: artifacts
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release
+          find artifacts -type f -name "*.zip" -exec cp {} release/ \;
+          find release -type f -name "*.zip" | sort
+
+      - name: Publish release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRERELEASE: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          shopt -s nullglob
+          assets=(release/*.zip)
+          if [ "${#assets[@]}" -eq 0 ]; then
+            echo "::error::No release assets were prepared"
+            exit 1
+          fi
+
+          release_args=(--verify-tag --title "${TAG_NAME}" --generate-notes)
+          if [ "${PRERELEASE}" = "true" ]; then
+            release_args+=(--prerelease)
+          fi
+
+          if gh release view "${TAG_NAME}" >/dev/null 2>&1; then
+            gh release upload "${TAG_NAME}" "${assets[@]}" --clobber
+          else
+            gh release create "${TAG_NAME}" "${release_args[@]}" "${assets[@]}"
+          fi
