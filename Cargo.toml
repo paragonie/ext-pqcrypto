@@ -15,7 +15,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 ext-php-rs = "0.15"
 ml-kem = "=0.3.0"
-ml-dsa = "=0.1.0-rc.8"
-slh-dsa = "=0.2.0-rc.4"
+ml-dsa = "=0.1.0-rc.9"
+slh-dsa = "=0.2.0-rc.5"
 x-wing = { version = "=0.1.0-rc.0", features = ["getrandom", "zeroize"] }
 rand = "0.10"

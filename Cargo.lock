@@ -861,9 +861,9 @@ dependencies = [
 
 [[package]]
 name = "ml-dsa"
-version = "0.1.0-rc.8"
+version = "0.1.0-rc.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5b2bb0ad6fa2b40396775bd56f51345171490fef993f46f91a876ecdbdaea55"
+checksum = "e3a596bd65985e2b343c3fd6cc4ade15cdd76da66b15936cfbce72ea661cdbb2"
 dependencies = [
  "const-oid",
  "ctutils",
@@ -1424,9 +1424,9 @@ checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
 
 [[package]]
 name = "slh-dsa"
-version = "0.2.0-rc.4"
+version = "0.2.0-rc.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "85f6f9b5317f06189671584c283b3f26339b89c97f21b5c50ae24aec397304a7"
+checksum = "371c02fe34044d8866ddf7cb0e8204a87ef31a39f0408bed41c4253ea9dd61ed"
 dependencies = [
  "const-oid",
  "digest 0.11.2",
