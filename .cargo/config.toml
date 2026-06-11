@@ -1,3 +1,8 @@
+[env]
+# Let PHP's headers use their fallback zend_max_align_t definition when bindgen
+# parses them with libclang on Windows.
+BINDGEN_EXTRA_CLANG_ARGS = "-D__STDC_VERSION__=199901L"
+
 [target.x86_64-pc-windows-msvc]
 linker = "rust-lld"
 

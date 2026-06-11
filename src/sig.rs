@@ -150,10 +150,8 @@ mod mldsa_ops {
 
             impl SigOps for $ops {
                 fn generate() -> (Vec<u8>, Vec<u8>) {
-                    use ml_dsa::KeyGen;
-                    use ml_dsa::signature::Keypair;
-                    let mut rng = rand::rng();
-                    let kp = <$param>::key_gen(&mut rng);
+                    use ml_dsa::{Generate, Keypair, SigningKey};
+                    let kp = SigningKey::<$param>::generate();
                     let seed = kp.to_seed().to_vec();
                     let vk_enc = kp.verifying_key().encode();
                     let vk_s: &[u8] = &vk_enc;
@@ -163,8 +161,7 @@ mod mldsa_ops {
                 fn keypair_from_seed(
                     seed: &[u8],
                 ) -> Result<(Vec<u8>, Vec<u8>), String> {
-                    use ml_dsa::KeyGen;
-                    use ml_dsa::signature::Keypair;
+                    use ml_dsa::{Keypair, SigningKey};
                     let seed_ref: &ml_dsa::Seed =
                         seed.try_into().map_err(|_| {
                             format!(
@@ -172,7 +169,7 @@ mod mldsa_ops {
                                 seed.len()
                             )
                         })?;
-                    let kp = <$param>::from_seed(seed_ref);
+                    let kp = SigningKey::<$param>::from_seed(seed_ref);
                     let vk_enc = kp.verifying_key().encode();
                     let vk_s: &[u8] = &vk_enc;
                     Ok((seed.to_vec(), vk_s.to_vec()))
@@ -182,14 +179,12 @@ mod mldsa_ops {
                     seed: &[u8],
                     msg: &[u8],
                 ) -> Result<Vec<u8>, String> {
-					use ml_dsa::KeyGen;
+                    use ml_dsa::SigningKey;
                     let seed_ref: &ml_dsa::Seed =
                         seed.try_into().map_err(|_| {
                             "Invalid seed length".to_string()
                         })?;
-                    let sk = <$param>::from_seed(
-                            seed_ref,
-                        );
+                    let sk = SigningKey::<$param>::from_seed(seed_ref);
                     let sig = Signer::sign(&sk, msg);
                     let enc = sig.encode();
                     let s: &[u8] = &enc;
