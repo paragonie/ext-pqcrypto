@@ -1,6 +1,6 @@
 [package]
 name = "php-ext-pqcrypto"
-version = "0.3.2"
+version = "0.3.3"
 edition = "2021"
 publish = true
 description = "PHP extension for post-quantum cryptography (ML-KEM, X-Wing, ML-DSA, SLH-DSA)"
@@ -13,9 +13,9 @@ name = "pqcrypto"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-ext-php-rs = "0.15"
-ml-kem = "=0.3.2"
-ml-dsa = "=0.1.1"
+ext-php-rs = "0.16.4"
+ml-kem = "=0.3.4"
+ml-dsa = "=0.1.2"
 slh-dsa = "=0.2.0-rc.5"
-x-wing = { version = "=0.1.0", features = ["getrandom", "zeroize"] }
-rand = "0.10"
+x-wing = { version = "=0.1.1", features = ["getrandom", "zeroize"] }
+rand = "0.10.3"
