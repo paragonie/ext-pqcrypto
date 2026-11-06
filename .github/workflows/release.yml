@@ -42,6 +42,14 @@ jobs:
         env:
           phpts: ${{ matrix.phpts }}
 
+      - name: Set up matching Clang and libclang (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y clang-18 libclang-18-dev
+          echo "CLANG_PATH=/usr/bin/clang-18" >> "$GITHUB_ENV"
+          echo "LIBCLANG_PATH=/usr/lib/llvm-18/lib" >> "$GITHUB_ENV"
+
       - name: Build extension
         run: cargo build --release
 

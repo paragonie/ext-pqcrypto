@@ -21,6 +21,14 @@ jobs:
           toolchain: nightly
           components: clippy
 
+      - name: Set up matching Clang and libclang (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y clang-18 libclang-18-dev
+          echo "CLANG_PATH=/usr/bin/clang-18" >> "$GITHUB_ENV"
+          echo "LIBCLANG_PATH=/usr/lib/llvm-18/lib" >> "$GITHUB_ENV"
+
       - run: cargo clippy --release -- -D warnings
 
   rust-tests:
@@ -33,6 +41,14 @@ jobs:
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
         with:
           toolchain: stable
+
+      - name: Set up matching Clang and libclang (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y clang-18 libclang-18-dev
+          echo "CLANG_PATH=/usr/bin/clang-18" >> "$GITHUB_ENV"
+          echo "LIBCLANG_PATH=/usr/lib/llvm-18/lib" >> "$GITHUB_ENV"
 
       - run: cargo test
 
@@ -67,6 +83,14 @@ jobs:
           echo "RUSTFMT=$rustfmt" >> $env:GITHUB_ENV
 
       - run: composer install --no-interaction
+
+      - name: Set up matching Clang and libclang (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y clang-18 libclang-18-dev
+          echo "CLANG_PATH=/usr/bin/clang-18" >> "$GITHUB_ENV"
+          echo "LIBCLANG_PATH=/usr/lib/llvm-18/lib" >> "$GITHUB_ENV"
 
       - run: cargo build --release
 
