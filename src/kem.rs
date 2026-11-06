@@ -39,13 +39,13 @@ macro_rules! define_kem_variant {
             ) -> PhpResult<Binary<u8>> {
                 <$ops>::decapsulate(&self.seed, &ciphertext)
                     .map(Binary::new)
-                    .map_err(|e| PhpException::default(e))
+                    .map_err(PhpException::from_message)
             }
 
             pub fn fromBytes(bytes: Binary<u8>) -> PhpResult<Self> {
                 let expected = <$ops>::seed_len();
                 if bytes.len() != expected {
-                    return Err(PhpException::default(format!(
+                    return Err(PhpException::from_message(format!(
                         "Invalid seed length: expected {}, got {}",
                         expected,
                         bytes.len()
@@ -74,14 +74,14 @@ macro_rules! define_kem_variant {
                 &self,
             ) -> PhpResult<Vec<Binary<u8>>> {
                 let (ss, ct) = <$ops>::encapsulate(&self.bytes)
-                    .map_err(|e| PhpException::default(e))?;
+                    .map_err(PhpException::from_message)?;
                 Ok(vec![Binary::new(ss), Binary::new(ct)])
             }
 
             pub fn fromBytes(bytes: Binary<u8>) -> PhpResult<Self> {
                 let expected = <$ops>::ek_len();
                 if bytes.len() != expected {
-                    return Err(PhpException::default(format!(
+                    return Err(PhpException::from_message(format!(
                         "Invalid key length: expected {}, got {}",
                         expected,
                         bytes.len()
@@ -106,10 +106,10 @@ macro_rules! define_kem_variant {
                 let ek = $ek { bytes: ek_bytes };
                 let mut ht = ZendHashTable::new();
                 ht.push(dk).map_err(|e| {
-                    PhpException::default(e.to_string())
+                    PhpException::from_message(e.to_string())
                 })?;
                 ht.push(ek).map_err(|e| {
-                    PhpException::default(e.to_string())
+                    PhpException::from_message(e.to_string())
                 })?;
                 Ok(ht)
             }
@@ -119,15 +119,15 @@ macro_rules! define_kem_variant {
             ) -> PhpResult<ZBox<ZendHashTable>> {
                 let (sk, ek_bytes) =
                     <$ops>::keypair_from_seed(&seed)
-                        .map_err(|e| PhpException::default(e))?;
+                        .map_err(PhpException::from_message)?;
                 let dk = $dk { seed: sk };
                 let ek = $ek { bytes: ek_bytes };
                 let mut ht = ZendHashTable::new();
                 ht.push(dk).map_err(|e| {
-                    PhpException::default(e.to_string())
+                    PhpException::from_message(e.to_string())
                 })?;
                 ht.push(ek).map_err(|e| {
-                    PhpException::default(e.to_string())
+                    PhpException::from_message(e.to_string())
                 })?;
                 Ok(ht)
             }

@@ -43,13 +43,13 @@ macro_rules! define_sig_variant {
             ) -> PhpResult<Binary<u8>> {
                 <$ops>::sign(&self.seed, &message)
                     .map(Binary::new)
-                    .map_err(|e| PhpException::default(e))
+                    .map_err(PhpException::from_message)
             }
 
             pub fn fromBytes(bytes: Binary<u8>) -> PhpResult<Self> {
                 let expected = <$ops>::seed_len();
                 if bytes.len() != expected {
-                    return Err(PhpException::default(format!(
+                    return Err(PhpException::from_message(format!(
                         "Invalid seed length: expected {}, got {}",
                         expected,
                         bytes.len()
@@ -80,13 +80,13 @@ macro_rules! define_sig_variant {
                 message: Binary<u8>,
             ) -> PhpResult<bool> {
                 <$ops>::verify(&self.bytes, &signature, &message)
-                    .map_err(|e| PhpException::default(e))
+                    .map_err(PhpException::from_message)
             }
 
             pub fn fromBytes(bytes: Binary<u8>) -> PhpResult<Self> {
                 let expected = <$ops>::vk_len();
                 if bytes.len() != expected {
-                    return Err(PhpException::default(format!(
+                    return Err(PhpException::from_message(format!(
                         "Invalid key length: expected {}, got {}",
                         expected,
                         bytes.len()
@@ -111,10 +111,10 @@ macro_rules! define_sig_variant {
                 let vk = $vk { bytes: vk_bytes };
                 let mut ht = ZendHashTable::new();
                 ht.push(sk).map_err(|e| {
-                    PhpException::default(e.to_string())
+                    PhpException::from_message(e.to_string())
                 })?;
                 ht.push(vk).map_err(|e| {
-                    PhpException::default(e.to_string())
+                    PhpException::from_message(e.to_string())
                 })?;
                 Ok(ht)
             }
@@ -124,15 +124,15 @@ macro_rules! define_sig_variant {
             ) -> PhpResult<ZBox<ZendHashTable>> {
                 let (sk_seed, vk_bytes) =
                     <$ops>::keypair_from_seed(&seed)
-                        .map_err(|e| PhpException::default(e))?;
+                        .map_err(PhpException::from_message)?;
                 let sk = $sk { seed: sk_seed };
                 let vk = $vk { bytes: vk_bytes };
                 let mut ht = ZendHashTable::new();
                 ht.push(sk).map_err(|e| {
-                    PhpException::default(e.to_string())
+                    PhpException::from_message(e.to_string())
                 })?;
                 ht.push(vk).map_err(|e| {
-                    PhpException::default(e.to_string())
+                    PhpException::from_message(e.to_string())
                 })?;
                 Ok(ht)
             }
@@ -432,7 +432,7 @@ impl SlhDsaSigningKey {
             message.as_ref()
         )
         .map(Binary::new)
-        .map_err(PhpException::default)
+        .map_err(PhpException::from_message)
     }
 }
 
@@ -462,7 +462,7 @@ impl SlhDsaVerifyingKey {
             signature.as_ref(),
             message.as_ref()
         )
-        .map_err(PhpException::default)
+        .map_err(PhpException::from_message)
     }
 }
 
@@ -480,7 +480,7 @@ impl SlhDsa {
         speed: String,
     ) -> PhpResult<Self> {
         let variant = SlhDsaVariant::from_params(&hash, &speed)
-            .map_err(PhpException::default)?;
+            .map_err(PhpException::from_message)?;
         Ok(Self { variant })
     }
 
@@ -499,9 +499,9 @@ impl SlhDsa {
         };
         let mut ht = ZendHashTable::new();
         ht.push(sk)
-            .map_err(|e| PhpException::default(e.to_string()))?;
+            .map_err(|e| PhpException::from_message(e.to_string()))?;
         ht.push(vk)
-            .map_err(|e| PhpException::default(e.to_string()))?;
+            .map_err(|e| PhpException::from_message(e.to_string()))?;
         Ok(ht)
     }
 
@@ -511,7 +511,7 @@ impl SlhDsa {
     ) -> PhpResult<SlhDsaSigningKey> {
         let expected = self.variant.sk_len();
         if bytes.len() != expected {
-            return Err(PhpException::default(format!(
+            return Err(PhpException::from_message(format!(
                 "Invalid key length: expected {}, got {}",
                 expected,
                 bytes.len()
@@ -529,7 +529,7 @@ impl SlhDsa {
     ) -> PhpResult<SlhDsaVerifyingKey> {
         let expected = self.variant.vk_len();
         if bytes.len() != expected {
-            return Err(PhpException::default(format!(
+            return Err(PhpException::from_message(format!(
                 "Invalid key length: expected {}, got {}",
                 expected,
                 bytes.len()
